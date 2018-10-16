@@ -4,7 +4,7 @@ Drag/rotate/resize handler for [leaflet](http://leafletjs.com) rectangles. This 
 Leaflet.Path.Transform (https://github.com/w8r/Leaflet.Path.Transform) modified to 
 handle rectangles. Why did we do this? 
 
-* wanted to control the scaling in a way that was dependent on the Path being a rectangle
+* wanted to control the scaling in a way that was dependent on the Path being a rectangle and to avoid shapes crossing over themselves
 * finer and integrated control over the drag action (Leaflet.Path.Transform extends and incorporates Leaflet.Path.Drag)
 * Leaflet.Path.Transform uses quite complicated code to do what is pretty straightforward
 maths - I wanted something that was simpler and didn't require switching between latlngs and image space
