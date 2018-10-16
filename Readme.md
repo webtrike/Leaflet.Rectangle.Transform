@@ -54,7 +54,7 @@ Handler assigns `resize` cursors to scale and scale origin handles. You can over
 
 ### Events
 
-Following events are fired on the transformed rectangle:
+Following events are fired on the transformed rectangle (anchor = origin):
 
 * **`rotatestart`, `rotate`, `rotateend`** - `{ rotation: <Radians> }`
 * **`scalestart`, `scale`, `scaleend`** - `{ anchor: <L.LatLng> }`
