@@ -27,8 +27,6 @@ var map = L.map('map-canvas').setView(center, zoom);
 var rectangle = L.rectangle([..., ...], { transform: true }).addTo(map);
 
 rectangle.transform.enable();
-// or partially:
-rectangle.transform.enable();
 ```
 
 If you have changed the geometry of the transformed layer and want the tool to reflect the changes, use:
