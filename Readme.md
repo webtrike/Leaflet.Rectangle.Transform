@@ -6,7 +6,7 @@ handle rectangles. Why did we do this?
 
 * wanted to control the scaling in a way that was dependent on the Path being a rectangle and to avoid shapes crossing over themselves
 * finer and integrated control over the drag action (Leaflet.Path.Transform extends and incorporates Leaflet.Path.Drag)
-* Leaflet.Path.Transform uses quite code that switches between pixel coordinates and 
+* Leaflet.Path.Transform uses code that switches between pixel coordinates and 
 geographical coordinates. I wanted something simpler that didn't require switching.
 * wanted some specific info returned with 'rotate', 'translate' and 'scale' event, Leaflet.Path.Transform returned things I didn't want.
 
