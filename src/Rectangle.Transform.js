@@ -5,7 +5,7 @@ L.Handler.RectangleTransform = L.Handler.extend({
     anchor: new L.Point(),
 
     // scale control handlers
-    scaleHandlerOptions: {
+    scaleHandleOptions: {
       radius:      5,
       fillColor:   '#ffffff',
       color:       '#202020',
@@ -15,7 +15,7 @@ L.Handler.RectangleTransform = L.Handler.extend({
       setCursor:   true
     },
 
-    scaleOriginHandlerOptions: {
+    scaleOriginHandleOptions: {
       radius:      10,
       fillColor:   '#ffffff',
       color:       '#202020',
@@ -26,7 +26,7 @@ L.Handler.RectangleTransform = L.Handler.extend({
     },
 
     // rotate control handlers
-    rotateHandlerOptions: {
+    rotateHandleOptions: {
       radius:      7,
       fillColor:   '#dddddd',
       color:       '#202020',
@@ -209,7 +209,7 @@ L.Handler.RectangleTransform = L.Handler.extend({
   },
 
   /**
-   * Create scale marker
+   * Create scale/rotate marker
    * @param  {L.LatLng} latlng
    * @param  {String}   id
    * @param  {String}   rotate - create a rotate handler, origin - create a origin handler,
@@ -220,11 +220,11 @@ L.Handler.RectangleTransform = L.Handler.extend({
     var HandleClass = this.options.handleClass;
     var options;
     if (rotateOrOrigin === 'rotate') {
-      options = this.options.rotateHandlerOptions;
+      options = this.options.rotateHandleOptions;
     } else if (rotateOrOrigin === 'origin') {
-      options = this.options.scaleOriginHandlerOptions;
+      options = this.options.scaleOriginHandleOptions;
     } else { 
-      options = this.options.scaleHandlerOptions;
+      options = this.options.scaleHandleOptions;
     }
     var marker = new HandleClass(latlng,
       L.Util.extend({}, options, {
@@ -239,9 +239,13 @@ L.Handler.RectangleTransform = L.Handler.extend({
     return marker;
   },
 
-
+  /**
+   * @param  {Object} Object to rotate (can be L.Path,L.Point or L.LatLng)
+   * @param  {Number} Angle to rotate
+   * @param  {L.LatLng} Origin about which to rotate
+   */
   rotate_: function(object, angle, origin) {
-     // create a rotation matrix, apply to the rectangle
+     // create a rotation matrix, apply to the object
      var matrix = L.matrix(1,0,0,1,0,0);
      matrix = matrix.rotate(angle, new L.Point(origin.lng,origin.lat)).flip();
      if (object instanceof L.FeatureGroup) {
@@ -253,8 +257,12 @@ L.Handler.RectangleTransform = L.Handler.extend({
      }
   },
   
+  /**
+   * @param  {Object} Object to translate (can be L.Path,L.Point or L.LatLng)
+   * @param  {L.Point} x,y translation values
+   */
   translate_: function(object, point) {
-     // create a translation matrix, apply to the rectangle
+     // create a translation matrix, apply to the object
      var matrix = L.matrix(1,0,0,1,0,0);
      matrix = matrix.translate(point);
      this.transformLayer_(object, matrix);
