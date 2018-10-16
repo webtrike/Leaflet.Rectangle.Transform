@@ -45,7 +45,7 @@ rectangle.transform.reset();
 * **`options.scaleHandleOptions`** - **<[Polyline_options](http://leafletjs.com/reference.html#polyline-options)>** - scale handle styles (w,nw,n,ne,e,se,s only)
 * **`options.scaleOriginHandleOptions`** - **<[Polyline_options](http://leafletjs.com/reference.html#polyline-options)>** - scale origin handle styles (sw only)
 
-**Cursors:**
+### `cursors`
 
 Handler assigns `resize` cursors to scale and scale origin handles. You can override that by setting `options.scaleHandleOptions.setCursor` and `options.scaleOriginHandleOptions.setCursor` to `false`. You can also handle provide a cursor for the rotate handles by setting `options.rotateHandleOptions.setCursor` to `true` and providing a cursor in `options.cursorsByType`.
 
@@ -58,9 +58,12 @@ Following events are fired on the transformed rectangle (anchor = origin):
 * **`scalestart`, `scale`, `scaleend`** - `{ anchor: <L.LatLng> }`
 * **`translatestart`, `translate`, `translateend`** - `{ anchor: <L.LatLng> }`
 
+### Development
 
+```shell
+npm run build
 ```
-
+this will create a concatenation of the src in the dist directory.
 
 
 ### TODO
