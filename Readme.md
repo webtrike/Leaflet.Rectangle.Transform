@@ -10,6 +10,8 @@ handle rectangles. Why did we do this?
 geographical coordinates. I wanted something simpler that didn't require switching.
 * wanted some specific info returned with 'rotate', 'translate' and 'scale' event, Leaflet.Path.Transform returned things I didn't want.
 
+![RectangleTransform](https://raw.githubusercontent.com/sppigot/Leaflet.Rectangle.Transform/RectangleTransform.png)
+
 ### Requirements
 
 Leaflet 1.0+
