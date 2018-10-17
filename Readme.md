@@ -33,7 +33,7 @@ If you have changed the geometry of the transformed layer and want the tool to r
 
 ```js
 // you have changed the geometry here
-rectangle.setLatLngs([...]);
+rectangle.setBounds([...]);
 // and want to update handlers:
 rectangle.transform.reset();
 ```
