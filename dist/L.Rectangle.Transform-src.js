@@ -519,7 +519,7 @@ L.Handler.RectangleTransform = L.Handler.extend({
   rotate_: function(object, angle, origin) {
      // create a rotation matrix, apply to the object
      var matrix = L.matrix(1,0,0,1,0,0);
-     matrix = matrix.rotate(angle, new L.Point(origin.lng,origin.lat)).flip();
+     matrix = matrix.rotate(angle, this.project_(origin)).flip();
      if (object instanceof L.FeatureGroup) {
        object.eachLayer(function(layer) {
           this.transformLayer_(layer, matrix);
@@ -568,14 +568,21 @@ L.Handler.RectangleTransform = L.Handler.extend({
         if (Array.isArray(pt)) { 
            pt = this.transformArray_(pt, matrix);
         } else {
-           //var pnt = matrix.transform(new L.Point(pt.lng,pt.lat));
-           //pt.lat = pnt.y;
-           //pt.lng = pnt.x;
-           var pnt = matrix.transform(L.Projection.SphericalMercator.project(pt));
-           pt = L.Projection.SphericalMercator.unproject(pnt);
+           var pnt = matrix.transform(this.project_(pt));
+           var npnt = this.unproject_(pnt);
+           pt.lat = npnt.lat;
+           pt.lng = npnt.lng;
         }
      }
      return pts;
+  },
+
+  project_: function(latLng) {
+     return L.Projection.SphericalMercator.project(latLng);
+  },
+
+  unproject_: function(pt) {
+     return L.Projection.SphericalMercator.unproject(pt);
   },
 
   /**
@@ -761,9 +768,9 @@ L.Handler.RectangleTransform = L.Handler.extend({
   onTranslate_: function(evt) {
     var coordinate = evt.latlng;
     if (this.lastCoordinate_) {
-        var deltaX = coordinate.lng - this.lastCoordinate_.lng;
-        var deltaY = coordinate.lat - this.lastCoordinate_.lat;
-        var transPoint = new L.Point(deltaX, deltaY);
+        var c = this.project_(coordinate);
+        var lc = this.project_(this.lastCoordinate_);
+        var transPoint = new L.Point(c.x - lc.x,c.y - lc.y);
 
         this.translate_(this.rectangle_, transPoint);
         var anchor = this.getAnchor();
@@ -773,7 +780,7 @@ L.Handler.RectangleTransform = L.Handler.extend({
         this.createOrUpdateControlFeatures_();
         this.lastCoordinate_ = coordinate;
     }
-    this.rectangle_.fire('translate', { layer: this.rectangle_, anchor: this.anchor_ });
+    this.rectangle_.fire('translate', { layer: this.rectangle_, anchor: this.getAnchor()});
   },
 
   /**
