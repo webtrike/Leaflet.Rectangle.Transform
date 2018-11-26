@@ -1,9 +1,13 @@
 L.Handler.RectangleTransform = L.Handler.extend({
 
   options: {
-    angle: 0.0,
-    anchor: new L.Point(),
+    angle: 0,
+    ni: 0,
+    nj: 0,
+    dphi: 0,
+    dlambda: 0,
 
+    
     // scale control handlers
     scaleHandleOptions: {
       radius:      5,
@@ -74,6 +78,12 @@ L.Handler.RectangleTransform = L.Handler.extend({
     this.controlFeatures_ = null;
     this.enabled_ = false;
 
+   
+    this.toRadians = function(degs) { return degs * Math.PI / 180; };
+
+    this.toDegrees = function(rads) { return rads * 180 / Math.PI; };
+    this.dphi_ = this.dlambda_ = this.ni_ = this.nj_ = 0;
+    this.twoPIR = 2.0 * Math.PI * 6371.0;
   },
 
   /**
@@ -104,6 +114,13 @@ L.Handler.RectangleTransform = L.Handler.extend({
       L.Handler.RectangleTransform.prototype.options,
       options);
 
+    if (options.angle) { this.angle_ = this.toRadians(-options.angle); }
+    if (options.dphi) { this.dphi_ = options.dphi; }
+    if (options.dlambda) { this.dlambda_ = options.dlambda; }
+    if (options.ni) { this.ni_ = options.ni; }
+    if (options.nj) { this.nj_ = options.nj; }
+
+
     if (enabled) {
       this.enable();
     }
@@ -121,11 +138,10 @@ L.Handler.RectangleTransform = L.Handler.extend({
 
     if (!this.angle_) {
       this.angle_ = 0;
-      if (this.rectangle_.options.rotation) {
-        this.angle_ = this.rectangle_.options.rotation;
-        this.rotate_(this.rectangle_, this.angle_, this.getAnchor());
-      }
+    } else {
+      this.rotate_(this.rectangle_, this.angle_, this.getAnchor());
     }
+
     this.createOrUpdateControlFeatures_();
     this.rectangle_.on('mousedown', this.onTranslateStart_, this);
   },
@@ -139,19 +155,27 @@ L.Handler.RectangleTransform = L.Handler.extend({
     this.rectangle_.off('mousedown', this.onTranslateStart_, this);
     this.controlFeatures_ = null;
     this.rectangle_ = null;
+    this.gridFeature_ = null;
   },
 
-  // As these are public, the setters should cause an update of the rectangle and redraw
+  // TODO: the setters should cause an update of the rectangle and redraw
   setAnchor: function(latLng) {
     this.anchor_ = latLng;
   },
 
-  getAnchor: function() {
-    return this.anchor_;
-  },
-
   setAngle: function(angle) {
     this.angle_ = angle;
+  },
+
+  setGridCharacteristics: function(ni, nj, dphi, dlambda) {
+    this.ni_ = ni;
+    this.nj_ = nj;
+    this.dphi_ = dphi; 
+    this.dlambda_ = dlambda; 
+  },
+
+  getAnchor: function() {
+    return this.anchor_;
   },
 
   getAngle: function() {
@@ -170,6 +194,54 @@ L.Handler.RectangleTransform = L.Handler.extend({
        }
     }
     return nl;
+  },
+
+  /* From www.movable-type.co.uk/scripts/latlong.html */ 
+  destinationPoint: function(latlng, bearing, d) {
+     var R = 6371;
+     var brng = this.toRadians(bearing);
+     var φ1 = this.toRadians(latlng.lat), λ1 = this.toRadians(latlng.lng);
+     var φ2 = Math.asin( Math.sin(φ1)*Math.cos(d/R) +
+                    Math.cos(φ1)*Math.sin(d/R)*Math.cos(brng) );
+     var λ2 = λ1 + Math.atan2(Math.sin(brng)*Math.sin(d/R)*Math.cos(φ1),
+                         Math.cos(d/R)-Math.sin(φ1)*Math.sin(φ2));
+     return L.latLng([this.toDegrees(φ2),this.toDegrees(λ2)]);
+  },
+
+  /**
+   * Helper to calculate distance in km east-west on parallel of latitude
+   *
+   * @param {float} latitude parallel of latitude
+   * @param {float} dphi difference in latitude
+   */
+  calcdlambdakm: function (latitude, dlambda) {
+      var latr = (Math.abs(latitude) * Math.PI)/180.0;
+      return this.twoPIR * Math.cos(latr) * (dlambda / 360.0);
+  },
+
+  /**
+   * Helper to calculate distance in km north-south on meridian of longitude
+   *
+   * @param {float} dphi difference in latitude
+   */
+  calcdphikm: function (dphi) {
+      return this.twoPIR * (dphi / 360.0);
+  },
+
+  createRealFeature: function(bl) {
+     if (this.dphi_ === 0 || this.dlambda_ === 0 || this.ni_ === 0 || this.nj_ === 0) {
+         return false;
+     }
+     
+     // calculate top right, top left, bottom right using bl, ni, nj and cellSize
+     
+     var widb = this.ni_ * this.calcdlambdakm(bl.lat, this.dlambda_),
+         hgt = this.nj_ * this.calcdphikm(this.dphi_),
+         tl = this.destinationPoint(bl, 0, hgt),
+         widt = this.ni_ * this.calcdlambdakm(tl.lat, this.dlambda_),
+         tr = this.destinationPoint(tl, 90, widt),
+         br = this.destinationPoint(bl, 90, widb);
+     return new L.Polygon([ bl, tl, tr, br, bl ]);
   },
 
   createOrUpdateControlFeatures_: function() {
@@ -199,7 +271,16 @@ L.Handler.RectangleTransform = L.Handler.extend({
             rotate = this.createHandler_(L.latLng(bl.lat,bl.lng-(centre.lng-bl.lng)),'rotate', 'rotate'),
             rotateLine = new L.Polyline([ L.latLng(bl.lat,bl.lng-(centre.lng-bl.lng)), bl ], this.options.rotateLineOptions);
 
+
         this.controlFeatures_ = new L.FeatureGroup([rotateLine, nw, ne, sw, se, w, n, e, s, rotate]);
+
+        /*
+        var realFeature = this.createRealFeature(bl);
+        if (realFeature) {
+            this.controlFeatures_.addLayer(realFeature);
+        }
+        */
+
         // Rotate FeatureGroup using angle
         if (this.getAngle() !== 0) {
           this.rotate_(this.controlFeatures_, this.getAngle(), this.getAnchor());
