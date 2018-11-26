@@ -618,9 +618,9 @@ L.Handler.RectangleTransform = L.Handler.extend({
       var angle = Math.atan2(pos.y - origin.y, pos.x - origin.x) -
                   Math.atan2(previous.y - origin.y, previous.x - origin.x);
 
-      this.setAngle(this.angle_ + angle);
+      this.setAngle(this.angle_ - angle);
       this.previous_ = pos;
-      this.rotate_(this.rectangle_, angle, this.getAnchor());
+      this.rotate_(this.rectangle_, -angle, this.getAnchor());
       this.createOrUpdateControlFeatures_(true);
     }
 
