@@ -113,6 +113,7 @@ L.Handler.RectangleTransform = L.Handler.extend({
     if (this.gridLineFeatures_ && this.map_) {
       if (makeVisible && !this.map_.hasLayer(this.gridLineFeatures_)) {
         this.map_.addLayer(this.gridLineFeatures_);
+        this.gridLineFeatures_.bringToBack();
       } else if (!makeVisible && this.map_.hasLayer(this.gridLineFeatures_)) {
         this.map_.removeLayer(this.gridLineFeatures_);
       }
