@@ -49,6 +49,13 @@ L.Handler.RectangleTransform = L.Handler.extend({
       fill:      false
     },
 
+    gridLineOptions: {
+      stroke:    true,
+      color:     '#000000',
+      weight:    1,
+      opacity:   1
+    },
+
     handleClass:       L.CircleMarker,
 
     cursorsByType: {
@@ -76,7 +83,9 @@ L.Handler.RectangleTransform = L.Handler.extend({
     this.map_  = rectangle._map;
 
     this.controlFeatures_ = null;
+    this.gridLineFeatures_ = null;
     this.enabled_ = false;
+    this.showGridLineFeatures_ = true;
 
    
     this.toRadians = function(degs) { return degs * Math.PI / 180; };
@@ -100,6 +109,19 @@ L.Handler.RectangleTransform = L.Handler.extend({
     }
   },
 
+  gridLineFeaturesVisible: function(makeVisible) {
+    if (this.gridLineFeatures_ && this.map_) {
+      if (makeVisible && !this.map_.hasLayer(this.gridLineFeatures_)) {
+        this.map_.addLayer(this.gridLineFeatures_);
+      } else if (!makeVisible && this.map_.hasLayer(this.gridLineFeatures_)) {
+        this.map_.removeLayer(this.gridLineFeatures_);
+      }
+    }
+    this.showGridLineFeatures_ = makeVisible;
+  },
+
+    
+
   /**
    * Change editing options
    * @param {Object} options
@@ -119,6 +141,10 @@ L.Handler.RectangleTransform = L.Handler.extend({
     if (options.dlambda) { this.dlambda_ = options.dlambda; }
     if (options.ni) { this.ni_ = options.ni; }
     if (options.nj) { this.nj_ = options.nj; }
+
+    if ('showGridLineFeatures' in options) { 
+      this.showGridLineFeatures_ = options.showGridLineFeatures; 
+    }
 
 
     if (enabled) {
@@ -154,6 +180,7 @@ L.Handler.RectangleTransform = L.Handler.extend({
     this.hideHandlers_();
     this.rectangle_.off('mousedown', this.onTranslateStart_, this);
     this.controlFeatures_ = null;
+    this.gridLineFeatures_ = null;
     this.rectangle_ = null;
     this.gridFeature_ = null;
   },
@@ -274,18 +301,41 @@ L.Handler.RectangleTransform = L.Handler.extend({
 
         this.controlFeatures_ = new L.FeatureGroup([rotateLine, nw, ne, sw, se, w, n, e, s, rotate]);
 
-        /*
+        /* 
         var realFeature = this.createRealFeature(bl);
         if (realFeature) {
             this.controlFeatures_.addLayer(realFeature);
         }
         */
 
+        // create grid lines
+        if (this.gridLineFeatures_ && this.showGridLineFeatures_) {
+          this.map_.removeLayer(this.gridLineFeatures_);
+        }
+        this.gridLineFeatures_ = new L.FeatureGroup();
+        if (this.dphi_ !== 0 && this.dlambda_ !== 0 && this.ni_ !== 0 && this.nj_ !== 0) {
+          for (var i = 1; i < this.ni_; i++) {
+             var lng = bl.lng + (this.dlambda_ * i);
+             var gridLineLng = new L.Polyline([ L.latLng(bl.lat,lng), L.latLng(tl.lat,lng) ],
+                                              this.options.gridLineOptions);
+             this.gridLineFeatures_.addLayer(gridLineLng);
+          }
+          for (var j = 1; j < this.nj_; j++) {
+             var lat = bl.lat + (this.dphi_ * j);
+             var gridLineLat = new L.Polyline([ L.latLng(lat,bl.lng), L.latLng(lat,br.lng) ],
+                                              this.options.gridLineOptions);
+             this.gridLineFeatures_.addLayer(gridLineLat);
+          }
+        }
+
         // Rotate FeatureGroup using angle
         if (this.getAngle() !== 0) {
           this.rotate_(this.controlFeatures_, this.getAngle(), this.getAnchor());
+          this.rotate_(this.gridLineFeatures_, this.getAngle(), this.getAnchor());
         }
+        if (this.showGridLineFeatures_) { this.map_.addLayer(this.gridLineFeatures_); }
         this.map_.addLayer(this.controlFeatures_);
+        
 
   },
 
